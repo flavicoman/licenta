@@ -1,0 +1,72 @@
+#define BLYNK_TEMPLATE_ID "TMPLXR01niJ2"
+#define BLYNK_DEVICE_NAME "NodeMCU"
+#define BLYNK_FIRMWARE_VERSION "0.1.0"
+#define BLYNK_PRINT Serial 
+#define APP_DEBUG 
+#include "BlynkEdgent.h"
+#include <DHT.h> 
+#define BLYNK_PRINT Serial
+BlynkTimer timer;
+#define DHTTYPE DHT11     // DHT 11
+#define DHTPIN 4          // D3
+#define RELEU1 16          //D0 
+#define RELEU2 5          //D1
+DHT dht(DHTPIN, DHTTYPE);
+void sendSensor()
+{
+  float h = dht.readHumidity();
+  float t = dht.readTemperature(); // or dht.readTemperature(true) for Fahrenheit
+ 
+  if (isnan(h) || isnan(t)) {
+    Serial.println("Failed to read from DHT sensor!");
+    return;
+  }
+  // putem trimite orice valoare oricand 
+  Blynk.virtualWrite(V5, t);
+  Blynk.virtualWrite(V6, h);
+  Serial.println(t);
+}
+
+BLYNK_WRITE(V0)
+{
+  if(param.asInt()==1) 
+  { digitalWrite(RELEU1, HIGH);
+  }
+  else
+  digitalWrite(RELEU1,LOW);
+}
+
+BLYNK_WRITE(V2)
+{
+  if(param.asInt()==1) 
+  { digitalWrite(RELEU2, HIGH);
+  }
+  else
+  digitalWrite(RELEU2,LOW);
+}
+
+BLYNK_CONNECTED()
+{
+  Blynk.syncVirtual(V0);
+  Blynk.syncVirtual(V2);
+  
+ 
+}
+
+void setup()
+{ pinMode(RELEU1, OUTPUT);
+pinMode(RELEU2, OUTPUT);
+
+
+Serial.begin(9600);
+delay(100);
+dht.begin();
+
+timer.setInterval(1000L, sendSensor);
+
+BlynkEdgent.begin();
+}
+
+void loop()
+{ BlynkEdgent.run();
+  timer.run();}
